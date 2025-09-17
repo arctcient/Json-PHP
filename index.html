@@ -8,12 +8,12 @@
   </head>
   <body>
     <header class="navbar">
-    <h1>Informasi Kelas</h1>
-    <div class="controls">
+      <h1>Informasi Kelas</h1>
+      <div class="controls">
         <button onclick="toggleView()">Tampilkan/Sembunyikan JSON</button>
         <button onclick="showAddUI()">Tambah Data Baru</button>
-    </div>
-</header>
+      </div>
+    </header>
 
     <div id="table-view">
       <table id="tabel-kelas">
@@ -51,8 +51,8 @@
       <h4>Request Body</h4>
       <textarea id="json-request-body">
 {
-    "nama_kelas": "Kelas Baru via JSON",
-    "status": "open"
+    "nama_kelas": "Nama Kelas Baru",
+    "status": "open/close"
 }
       </textarea>
       <div class="controls">
@@ -186,9 +186,9 @@
       }
 
       function backToJsonView() {
-        addJsonView.style.display = "none"; 
-        editJsonView.style.display = "none"; 
-        jsonView.style.display = "block"; 
+        addJsonView.style.display = "none";
+        editJsonView.style.display = "none";
+        jsonView.style.display = "block";
         tableView.style.display = "none";
       }
 
@@ -391,7 +391,7 @@
           .then((res) => res.json())
           .then((result) => {
             if (result.status === "success" || result.status === "info") {
-              loadData(); 
+              loadData();
 
               if (source === "modal") {
                 alert(result.message);
@@ -422,7 +422,7 @@
       }
 
       function fetchDataAndDisplay(url) {
-        jsonOutput.value = "Memuat data dari " + url + "..."; 
+        jsonOutput.value = "Memuat data dari " + url + "...";
 
         fetch(url)
           .then((response) => response.json())
@@ -453,7 +453,7 @@
 
         fetchDataAndDisplay(urlWithId);
       }
-      
+
       document.addEventListener("DOMContentLoaded", loadData);
     </script>
   </body>
