@@ -36,12 +36,18 @@ try {
     }
 
     $stmt = $conn->prepare("UPDATE informasi_kelas SET nama_kelas = ?, status = ? WHERE id = ?");
-
     $stmt->bind_param("ssi", $data->nama_kelas, $data->status, $data->id);
 
     if ($stmt->execute()) {
         if ($stmt->affected_rows > 0) {
-            send_response('success', 'Data berhasil diperbarui.');
+            $stmt->close();
+            $stmt = $conn->prepare("SELECT id, nama_kelas, status FROM informasi_kelas WHERE id = ?");
+            $stmt->bind_param("i", $data->id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $updated_data = $result->fetch_assoc();
+
+            send_response('success', 'Data berhasil diperbarui.', $updated_data);
         } else {
             send_response('info', 'Tidak ada perubahan pada data atau data tidak ditemukan.');
         }
@@ -54,3 +60,4 @@ try {
 } catch (Exception $e) {
     send_response('error', $e->getMessage(), null, 500);
 }
+?>
