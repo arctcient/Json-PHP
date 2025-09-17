@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Daftar Kelas</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        padding: 2em;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        border: 1px solid #ccc;
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background-color: #f2f2f2;
+      }
+      .controls {
+        margin-bottom: 20px;
+      }
+      button {
+        margin-right: 5px;
+        cursor: pointer;
+      }
+      #json-view {
+        display: none;
+      } /* Sembunyikan tampilan JSON secara default */
+      textarea {
+        width: 100%;
+        height: 300px;
+        font-family: monospace;
+      }
+      .status-open {
+        color: green;
+        font-weight: bold;
+      }
+      .status-close {
+        color: red;
+        font-weight: bold;
+      }
+      /* Style untuk Modal */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        justify-content: center;
+        align-items: center;
+      }
+      .modal-content {
+        background: white;
+        padding: 20px;
+        border-radius: 5px;
+        width: 400px;
+      }
+      .modal-content h3 {
+        margin-top: 0;
+      }
+      .modal-content .form-group {
+        margin-bottom: 15px;
+      }
+      .modal-content label {
+        display: block;
+        margin-bottom: 5px;
+      }
+      .modal-content input,
+      .modal-content select {
+        width: 100%;
+        padding: 8px;
+        box-sizing: border-box;
+      }
+
+      /* Sembunyikan view yang tidak aktif */
+      #json-view,
+      #add-json-view {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Informasi Kelas</h1>
+
+    <div class="controls">
+      <button onclick="toggleView()">Tampilkan/Sembunyikan JSON</button>
+      <button onclick="showAddUI()">Tambah Data Baru</button>
+    </div>
+
+    <div id="table-view">
+      <table id="tabel-kelas">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nama Kelas</th>
+            <th>Status</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="data-kelas">
+          <tr>
+            <td colspan="4">Memuat data...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="json-view">
+      <h3>Raw JSON Response</h3>
+      <textarea id="json-output" readonly></textarea>
+      <div class="controls">
+        <h4>Operasi JSON (Simulasi)</h4>
+        <button onclick="fetchAllJson()">GET (View All)</button>
+        <input type="text" placeholder="Masukkan ID" id="view-id-input" />
+        <button onclick="fetchJsonById()">GET (View by ID)</button>
+        <button onclick="triggerJsonEdit()">EDIT</button>
+        <button onclick="alert('Fungsi Delete JSON belum dibuat!')">
+          DELETE
+        </button>
+      </div>
+    </div>
+
+    <div id="add-json-view">
+      <h3>Tambah Data (Mode API)</h3>
+      <h4>Request Body</h4>
+      <textarea id="json-request-body">
+{
+    "nama_kelas": "Kelas Baru via JSON",
+    "status": "open"
+}
+      </textarea>
+      <div class="controls">
+        <button onclick="backToJsonView()">Kembali ke View All</button>
+        <button onclick="sendJsonRequest()">Kirim Request</button>
+      </div>
+      <h4>Server Response</h4>
+      <pre><code id="json-response-output"></code></pre>
+    </div>
+
+    <div id="edit-json-view" style="display: none">
+      <h3>Edit Data (Mode API)</h3>
+      <h4>Request Body</h4>
+      <textarea id="json-edit-request-body"></textarea>
+      <div class="controls">
+        <button onclick="backToJsonView()">Kembali ke View All</button>
+        <button onclick="sendJsonEditRequest()">Update Request</button>
+      </div>
+      <h4>Server Response</h4>
+      <pre><code id="json-edit-response-output"></code></pre>
+    </div>
+
+    <div id="add-modal" class="modal-overlay">
+      <div class="modal-content">
+        <h3>Tambah Kelas Baru</h3>
+        <form id="add-form">
+          <div class="form-group">
+            <label for="nama_kelas">Nama Kelas</label>
+            <input type="text" id="nama_kelas" name="nama_kelas" required />
+          </div>
+          <div class="form-group">
+            <label for="status">Status</label>
+            <select id="status" name="status">
+              <option value="open">Open</option>
+              <option value="close">Close</option>
+            </select>
+          </div>
+          <button type="submit">Simpan</button>
+          <button type="button" onclick="closeModal()">Batal</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="edit-modal" class="modal-overlay">
+      <div class="modal-content">
+        <h3>Edit Kelas</h3>
+        <form id="edit-form">
+          <input type="hidden" id="edit_id" name="id" />
+          <div class="form-group">
+            <label for="edit_nama_kelas">Nama Kelas</label>
+            <input
+              type="text"
+              id="edit_nama_kelas"
+              name="nama_kelas"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="edit_status">Status</label>
+            <select id="edit_status" name="status">
+              <option value="open">Open</option>
+              <option value="close">Close</option>
+            </select>
+          </div>
+          <button type="submit">Update</button>
+          <button type="button" onclick="closeEditModal()">Batal</button>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      const apiUrl = "ambil_data.php";
+      const dataContainer = document.getElementById("data-kelas");
+      const tableView = document.getElementById("table-view");
+      const jsonView = document.getElementById("json-view");
+      const jsonOutput = document.getElementById("json-output");
+      const addJsonView = document.getElementById("add-json-view");
+      const modal = document.getElementById("add-modal");
+      const addForm = document.getElementById("add-form");
+      const editModal = document.getElementById("edit-modal");
+      const editForm = document.getElementById("edit-form");
+
+      let cachedData = null; // Variabel untuk menyimpan data JSON
+
+      // Fungsi utama untuk mengambil dan menampilkan data
+      function loadData() {
+        fetch(apiUrl)
+          .then((response) => response.json())
+          .then((result) => {
+            cachedData = result; // Simpan data di cache
+            renderTable(result.data); // Tampilkan dalam bentuk tabel
+            jsonOutput.value = JSON.stringify(result, null, 2); // Tampilkan di textarea
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            dataContainer.innerHTML =
+              '<tr><td colspan="4">Gagal memuat data.</td></tr>';
+          });
+      }
+
+      // Fungsi untuk merender data ke dalam tabel HTML
+      function renderTable(data) {
+        dataContainer.innerHTML = ""; // Kosongkan tabel
+        data.forEach((kelas) => {
+          let row = document.createElement("tr");
+          let statusClass =
+            kelas.status === "open" ? "status-open" : "status-close";
+          row.innerHTML = `
+                    <td>${kelas.id}</td>
+                    <td>${kelas.nama_kelas}</td>
+                    <td class="${statusClass}">${kelas.status}</td>
+                    <td>
+                        <button onclick="editKelas(${kelas.id})">Edit</button>
+                        <button onclick="deleteKelas(${kelas.id})">Delete</button>
+                    </td>
+                `;
+          dataContainer.appendChild(row);
+        });
+      }
+
+      // Fungsi untuk toggle antara tampilan tabel dan JSON
+      function toggleView() {
+        addJsonView.style.display = "none";
+        editJsonView.style.display = "none";
+
+        const isJsonVisible = jsonView.style.display === "block";
+        if (isJsonVisible) {
+          jsonView.style.display = "none";
+          tableView.style.display = "block";
+        } else {
+          jsonView.style.display = "block";
+          tableView.style.display = "none";
+        }
+      }
+
+      // --- FUNGSI-FUNGSI UNTUK TOMBOL AKSI (PLACEHOLDER) ---
+      // Ini hanya contoh, butuh file PHP baru untuk menangani edit/delete
+
+      function backToJsonView() {
+        addJsonView.style.display = "none"; // Sembunyikan view tambah
+        editJsonView.style.display = "none"; // Sembunyikan view edit
+        jsonView.style.display = "block"; // Tampilkan view lihat semua JSON
+        tableView.style.display = "none"; // Pastikan view tabel tersembunyi
+      }
+
+      function editKelas(id, source = "table") {
+        // Ambil data spesifik dari server menggunakan API 'get by id' yang sudah kita buat
+        fetch(`${apiUrl}?id=${id}`)
+          .then((response) => response.json())
+          .then((result) => {
+            if (result.data && !result.data.error) {
+              const dataToEdit = result.data;
+              // Gunakan 'source' untuk menentukan UI
+              if (source === "table") {
+                openEditModal(dataToEdit);
+              } else {
+                // source === 'json'
+                showEditJsonView(dataToEdit);
+              }
+            } else {
+              alert(
+                "Gagal mengambil data untuk diedit: " +
+                  (result.data.error || "Data tidak ditemukan.")
+              );
+            }
+          })
+          .catch((err) => alert("Terjadi kesalahan saat mengambil data."));
+      }
+
+      function deleteKelas(id) {
+        if (
+          confirm(`Apakah Anda yakin ingin menghapus data dengan ID: ${id}?`)
+        ) {
+          alert(
+            `Fitur Delete belum diimplementasikan di back-end.\nData yang akan dihapus: { id: ${id} }`
+          );
+          // Di sini nanti akan ada kode fetch() dengan method 'POST' atau 'DELETE'
+          // ke file misal 'hapus_data.php'
+        }
+      }
+
+      // Fungsi untuk menampilkan UI Tambah Data yang sesuai
+      function showAddUI() {
+        if (tableView.style.display === "block") {
+          openModal();
+        } else {
+          // Sembunyikan view lain dan tampilkan view tambah JSON
+          tableView.style.display = "none";
+          jsonView.style.display = "none";
+          addJsonView.style.display = "block";
+        }
+      }
+
+      // Fungsi untuk Modal
+      function openModal() {
+        addForm.reset(); // Bersihkan form
+        modal.style.display = "flex";
+      }
+
+      function closeModal() {
+        modal.style.display = "none";
+      }
+
+      // Event listener untuk form di modal
+      addForm.addEventListener("submit", function (event) {
+        event.preventDefault(); // Mencegah form reload halaman
+        const formData = new FormData(addForm);
+        const data = Object.fromEntries(formData.entries());
+
+        addData(data, null, "modal");
+      });
+
+      // Fungsi untuk mengirim request dari tampilan JSON
+      function sendJsonRequest() {
+        const requestBody = document.getElementById("json-request-body");
+        const responseOutput = document.getElementById("json-response-output");
+
+        try {
+          const data = JSON.parse(requestBody.value);
+          addData(
+            data,
+            (response) => {
+              responseOutput.textContent = JSON.stringify(response, null, 2);
+            },
+            "json"
+          );
+        } catch (e) {
+          alert("JSON di Request Body tidak valid!");
+          responseOutput.textContent = "Error: Invalid JSON\n" + e.message;
+        }
+      }
+
+      // Fungsi UTAMA untuk mengirim data (bisa dipakai oleh modal dan JSON view)
+      function addData(data, callback, source = "modal") {
+        fetch("tambah_data.php", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        })
+          .then((response) => response.json())
+          .then((result) => {
+            if (result.status === "success") {
+              loadData();
+              if (source === "modal") {
+                alert(result.message);
+                closeModal();
+                tableView.style.display = "block";
+                jsonView.style.display = "none";
+                addJsonView.style.display = "none";
+              }
+            } else {
+              alert("Error: " + result.message);
+            }
+
+            // Jika ada callback (dari JSON view), jalankan
+            if (callback) {
+              callback(result);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Terjadi kesalahan saat mengirim data.");
+            if (callback) {
+              callback({ status: "error", message: error.toString() });
+            }
+          });
+      }
+
+      function openEditModal(data) {
+        // Isi form dengan data yang ada
+        document.getElementById("edit_id").value = data.id;
+        document.getElementById("edit_nama_kelas").value = data.nama_kelas;
+        document.getElementById("edit_status").value = data.status;
+        editModal.style.display = "flex";
+      }
+
+      function closeEditModal() {
+        editModal.style.display = "none";
+      }
+
+      editForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        const formData = new FormData(editForm);
+        const data = Object.fromEntries(formData.entries());
+        sendJsonEditRequest(data, "modal");
+      });
+
+      // --- FUNGSI-FUNGSI UNTUK JSON EDIT VIEW ---
+      const editJsonView = document.getElementById("edit-json-view");
+
+      function showEditJsonView(data) {
+        document.getElementById("json-edit-request-body").value =
+          JSON.stringify(data, null, 2);
+        document.getElementById("json-edit-response-output").textContent = "";
+
+        // Sembunyikan view lain, tampilkan view edit JSON
+        tableView.style.display = "none";
+        jsonView.style.display = "none";
+        addJsonView.style.display = "none";
+        editJsonView.style.display = "block";
+      }
+
+      /**
+       * Fungsi untuk menangani klik tombol Edit di JSON View
+       */
+      function triggerJsonEdit() {
+        const idInput = document.getElementById("view-id-input");
+        const id = idInput.value.trim();
+        if (!id) {
+          alert("Silakan masukkan ID yang akan diedit terlebih dahulu.");
+          idInput.focus();
+          return;
+        }
+        editKelas(id, "json");
+      }
+
+      /**
+       * Fungsi utama untuk mengirim data UPDATE ke server
+       * @param {object} [data=null] - Jika null, ambil dari textarea. Jika ada, gunakan objek tersebut.
+       */
+      function sendJsonEditRequest(data = null, source = "json") {
+        const responseOutput = document.getElementById(
+          "json-edit-response-output"
+        );
+        responseOutput.textContent = "Mengirim request update...";
+
+        let dataToUpdate;
+        if (data) {
+          dataToUpdate = data;
+        } else {
+          try {
+            dataToUpdate = JSON.parse(
+              document.getElementById("json-edit-request-body").value
+            );
+          } catch (e) {
+            alert("JSON di Request Body tidak valid!");
+            responseOutput.textContent = "Error: Invalid JSON\n" + e.message;
+            return;
+          }
+        }
+
+        fetch("edit_data.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(dataToUpdate),
+        })
+          .then((res) => res.json())
+          .then((result) => {
+            if (result.status === "success" || result.status === "info") {
+              loadData(); // Selalu refresh tabel di background
+
+              // PERBAIKAN LOGIKA: Cek source-nya
+              if (source === "modal") {
+                alert(result.message);
+                closeEditModal();
+                // Kembalikan ke TAMPILAN TABEL, bukan JSON
+                tableView.style.display = "block";
+                jsonView.style.display = "none";
+              }
+            } else {
+              alert("Error: " + result.message);
+            }
+            // Selalu update area respons di tampilan JSON
+            responseOutput.textContent = JSON.stringify(result, null, 2);
+          })
+          .catch((error) => {
+            responseOutput.textContent = "Error: " + error.toString();
+            alert("Terjadi kesalahan saat mengirim update.");
+          });
+      }
+
+      /**
+       * Fungsi generik untuk mengambil data dari URL dan menampilkannya di textarea.
+       * Ini untuk menghindari duplikasi kode fetch.
+       */
+      function fetchDataAndDisplay(url) {
+        jsonOutput.value = "Memuat data dari " + url + "..."; // Feedback untuk user
+
+        fetch(url)
+          .then((response) => response.json())
+          .then((result) => {
+            // Tampilkan hasil di textarea JSON utama
+            jsonOutput.value = JSON.stringify(result, null, 2);
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            jsonOutput.value = "Gagal memuat data.\n\n" + error.toString();
+          });
+      }
+
+      /**
+       * Fungsi untuk tombol GET (View All).
+       */
+      function fetchAllJson() {
+        // Panggil fungsi generik dengan URL dasar (tanpa parameter)
+        fetchDataAndDisplay(apiUrl);
+      }
+
+      /**
+       * Fungsi untuk tombol GET (View by ID).
+       */
+      function fetchJsonById() {
+        const idInput = document.getElementById("view-id-input");
+        const id = idInput.value;
+
+        // Validasi sederhana: pastikan ID tidak kosong
+        if (!id) {
+          alert("Silakan masukkan ID terlebih dahulu.");
+          idInput.focus();
+          return;
+        }
+
+        // Buat URL baru dengan parameter ID
+        const urlWithId = `${apiUrl}?id=${id}`;
+
+        // Panggil fungsi generik dengan URL yang sudah ada ID-nya
+        fetchDataAndDisplay(urlWithId);
+      }
+
+      // Panggil fungsi utama saat halaman dimuat
+      document.addEventListener("DOMContentLoaded", loadData);
+    </script>
+  </body>
+</html>
