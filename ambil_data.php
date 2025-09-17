@@ -1,9 +1,5 @@
 <?php
-// --- PENGATURAN KONEKSI DATABASE ---
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "Kelas";
+require_once 'connection/koneksi.php';
 
 // Mengatur header agar browser tahu bahwa ini adalah response JSON
 header('Content-Type: application/json');
@@ -22,7 +18,7 @@ function send_json_response($data, $http_code = 200)
 }
 
 // --- KONEKSI KE DATABASE ---
-$conn = new mysqli($servername, $username, $password, $dbname);
+$conn = connect();
 if ($conn->connect_error) {
     send_json_response(['error' => "Koneksi gagal: " . $conn->connect_error], 500);
 }

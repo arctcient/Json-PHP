@@ -331,7 +331,7 @@
 
       // Fungsi untuk menampilkan UI Tambah Data yang sesuai
       function showAddUI() {
-        if (tableView.style.display === "block") {
+        if (tableView.style.display !== "none") {
           openModal();
         } else {
           // Sembunyikan view lain dan tampilkan view tambah JSON

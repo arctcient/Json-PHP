@@ -1,9 +1,5 @@
 <?php
-// --- PENGATURAN KONEKSI DATABASE ---
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "Kelas";
+require_once 'connection/koneksi.php';
 
 // Set header sebagai JSON
 header('Content-Type: application/json');
@@ -40,7 +36,7 @@ if (!in_array($data->status, ['open', 'close'])) {
 
 // --- PROSES UPDATE KE DATABASE ---
 try {
-    $conn = new mysqli($servername, $username, $password, $dbname);
+    $conn = connect();
     if ($conn->connect_error) {
         throw new Exception("Koneksi database gagal: " . $conn->connect_error);
     }
