@@ -122,9 +122,7 @@
         <input type="text" placeholder="Masukkan ID" id="view-id-input" />
         <button onclick="fetchJsonById()">GET (View by ID)</button>
         <button onclick="triggerJsonEdit()">EDIT</button>
-        <button onclick="alert('Fungsi Delete JSON belum dibuat!')">
-          DELETE
-        </button>
+        <button onclick="triggerJsonDelete()">DELETE</button>
       </div>
     </div>
 
@@ -305,14 +303,29 @@
       }
 
       function deleteKelas(id) {
+        // Tampilkan dialog konfirmasi
         if (
           confirm(`Apakah Anda yakin ingin menghapus data dengan ID: ${id}?`)
         ) {
-          alert(
-            `Fitur Delete belum diimplementasikan di back-end.\nData yang akan dihapus: { id: ${id} }`
-          );
-          // Di sini nanti akan ada kode fetch() dengan method 'POST' atau 'DELETE'
-          // ke file misal 'hapus_data.php'
+          // Kirim request ke server
+          fetch("hapus_data.php", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ id: id }), // Kirim ID dalam format JSON
+          })
+            .then((res) => res.json())
+            .then((result) => {
+              alert(result.message); // Tampilkan pesan dari server
+              if (result.status === "success") {
+                loadData(); // Jika berhasil, muat ulang data untuk refresh tabel
+              }
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              alert("Terjadi kesalahan saat mencoba menghapus data.");
+            });
         }
       }
 
@@ -506,6 +519,18 @@
             responseOutput.textContent = "Error: " + error.toString();
             alert("Terjadi kesalahan saat mengirim update.");
           });
+      }
+
+      function triggerJsonDelete() {
+        const idInput = document.getElementById("view-id-input");
+        const id = idInput.value.trim();
+        if (!id) {
+          alert("Silakan masukkan ID yang akan dihapus terlebih dahulu.");
+          idInput.focus();
+          return;
+        }
+        // Panggil fungsi delete utama yang sudah memiliki konfirmasi
+        deleteKelas(id);
       }
 
       /**
