@@ -1,19 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Daftar Kelas</title>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <header class="navbar">
-    <h1>Informasi Kelas</h1>
-    <div class="controls">
-        <button onclick="toggleView()">Tampilkan/Sembunyikan JSON</button>
-        <button onclick="showAddUI()">Tambah Data Baru</button>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard - Daftar Kelas</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h2>Menu</h2>
     </div>
-</header>
+    <nav class="sidebar-nav">
+      <button onclick="toggleView('table')">Tabel</button>
+      <button onclick="toggleView('json')">JSON View</button>
+    </nav>
+  </aside>
+
+  <main class="main-content">
+    <header class="main-header">
+      <h1>Informasi Kelas</h1>
+      <button class="btn btn-primary" onclick="showAddUI()">
+        + Tambah Data Baru
+      </button>
+    </header>
 
     <div id="table-view" class="content-card">
       <table id="tabel-kelas">
@@ -62,8 +74,8 @@
       <h4>Request Body</h4>
       <textarea id="json-request-body">
 {
-    "nama_kelas": "Kelas Baru via JSON",
-    "status": "open"
+  "nama_kelas": "Kelas Baru via JSON",
+  "status": "open"
 }
         </textarea>
       <div class="controls">
@@ -206,12 +218,12 @@
       }
     }
 
-      function backToJsonView() {
-        addJsonView.style.display = "none"; 
-        editJsonView.style.display = "none"; 
-        jsonView.style.display = "block"; 
-        tableView.style.display = "none";
-      }
+    function backToJsonView() {
+      addJsonView.style.display = "none";
+      editJsonView.style.display = "none";
+      jsonView.style.display = "block";
+      tableView.style.display = "none";
+    }
 
     function editKelas(id, source = "table") {
       fetch(`${apiUrl}?id=${id}`)
@@ -380,53 +392,50 @@
       editKelas(id, "json");
     }
 
-      function sendJsonEditRequest(data = null, source = "json") {
-        const responseOutput = document.getElementById(
-          "json-edit-response-output"
-        );
-        responseOutput.textContent = "Mengirim request update...";
-
-        let dataToUpdate;
-        if (data) {
-          dataToUpdate = data;
-        } else {
-          try {
-            dataToUpdate = JSON.parse(
-              document.getElementById("json-edit-request-body").value
-            );
-          } catch (e) {
-            alert("JSON di Request Body tidak valid!");
-            responseOutput.textContent = "Error: Invalid JSON\n" + e.message;
-            return;
-          }
+    function sendJsonEditRequest(data = null, source = "json") {
+      const responseOutput = document.getElementById(
+        "json-edit-response-output"
+      );
+      responseOutput.textContent = "Mengirim request update...";
+      let dataToUpdate;
+      if (data) {
+        dataToUpdate = data;
+      } else {
+        try {
+          dataToUpdate = JSON.parse(
+            document.getElementById("json-edit-request-body").value
+          );
+        } catch (e) {
+          alert("JSON di Request Body tidak valid!");
+          responseOutput.textContent = "Error: Invalid JSON\n" + e.message;
+          return;
         }
-
-        fetch("edit_data.php", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(dataToUpdate),
-        })
-          .then((res) => res.json())
-          .then((result) => {
-            if (result.status === "success" || result.status === "info") {
-              loadData(); 
-
-              if (source === "modal") {
-                alert(result.message);
-                closeEditModal();
-                tableView.style.display = "block";
-                jsonView.style.display = "none";
-              }
-            } else {
-              alert("Error: " + result.message);
-            }
-            responseOutput.textContent = JSON.stringify(result, null, 2);
-          })
-          .catch((error) => {
-            responseOutput.textContent = "Error: " + error.toString();
-            alert("Terjadi kesalahan saat mengirim update.");
-          });
       }
+      fetch("edit_data.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dataToUpdate),
+      })
+        .then((res) => res.json())
+        .then((result) => {
+          if (result.status === "success" || result.status === "info") {
+            loadData();
+            if (source === "modal") {
+              alert(result.message);
+              closeEditModal();
+              tableView.style.display = "block";
+              jsonView.style.display = "none";
+            }
+          } else {
+            alert("Error: " + result.message);
+          }
+          responseOutput.textContent = JSON.stringify(result, null, 2);
+        })
+        .catch((error) => {
+          responseOutput.textContent = "Error: " + error.toString();
+          alert("Terjadi kesalahan saat mengirim update.");
+        });
+    }
 
     function triggerJsonDelete() {
       const idInput = document.getElementById("view-id-input");
@@ -439,40 +448,37 @@
       deleteKelas(id);
     }
 
-      function fetchDataAndDisplay(url) {
-        jsonOutput.value = "Memuat data dari " + url + "..."; 
-
-        fetch(url)
-          .then((response) => response.json())
-          .then((result) => {
-            jsonOutput.value = JSON.stringify(result, null, 2);
-          })
-          .catch((error) => {
-            console.error("Error:", error);
-            jsonOutput.value = "Gagal memuat data.\n\n" + error.toString();
-          });
-      }
+    function fetchDataAndDisplay(url) {
+      jsonOutput.value = "Memuat data dari " + url + "...";
+      fetch(url)
+        .then((response) => response.json())
+        .then((result) => {
+          jsonOutput.value = JSON.stringify(result, null, 2);
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          jsonOutput.value = "Gagal memuat data.\n\n" + error.toString();
+        });
+    }
 
     function fetchAllJson() {
       fetchDataAndDisplay(apiUrl);
     }
 
-      function fetchJsonById() {
-        const idInput = document.getElementById("view-id-input");
-        const id = idInput.value;
-
-        if (!id) {
-          alert("Silakan masukkan ID terlebih dahulu.");
-          idInput.focus();
-          return;
-        }
-
-        const urlWithId = `${apiUrl}?id=${id}`;
-
-        fetchDataAndDisplay(urlWithId);
+    function fetchJsonById() {
+      const idInput = document.getElementById("view-id-input");
+      const id = idInput.value;
+      if (!id) {
+        alert("Silakan masukkan ID terlebih dahulu.");
+        idInput.focus();
+        return;
       }
-      
-      document.addEventListener("DOMContentLoaded", loadData);
-    </script>
-  </body>
+      const urlWithId = `${apiUrl}?id=${id}`;
+      fetchDataAndDisplay(urlWithId);
+    }
+
+    document.addEventListener("DOMContentLoaded", loadData);
+  </script>
+</body>
+
 </html>
